@@ -2,16 +2,17 @@
 
 An isometric 3D tree whose plot is a scannable QR code. Type a link, grow a tree, and let the canopy come apart leaf by leaf into the modules of the code below.
 
-> Status: clean-room rewrite in progress. This repository currently holds documentation and licensing only; the implementation is being written from scratch.
+> Status: active rewrite. The implementation is being reworked from the original codebase; expect changes.
 
-## Inspiration and credits
+## Based on
 
-This project is an independent take on the isometric QR-tree idea. It is inspired by:
+This project is based on the code of:
 
-- [Magic Tree](https://github.com/Slifronic/magic-tree) by [@Slifronic](https://github.com/Slifronic) — MIT licensed. The earlier fork is [budife/magic-tree-qr](https://github.com/budife/magic-tree-qr).
-- [tree.icqr.com](https://tree.icqr.com) — the original interactive concept.
+- [budife/magic-tree-qr](https://github.com/budife/magic-tree-qr) — the earlier fork whose code was reused, rewritten, and extended here.
+- [Magic Tree](https://github.com/Slifronic/magic-tree) by [@Slifronic](https://github.com/Slifronic) — MIT licensed, the upstream of that fork.
+- [tree.icqr.com](https://tree.icqr.com) — the original interactive concept that inspired the idea.
 
-No source code, artwork, assets, or branding from those projects is copied into this repository. Everything here is written from scratch. The links above are kept as proper attribution for the ideas that came first.
+Portions of the original MIT-licensed code are retained. The upstream copyright notice and permission text are preserved in [LICENSE-UPSTREAM](LICENSE-UPSTREAM). Credit to the original authors is kept intentionally.
 
 ## Design goals
 
@@ -23,3 +24,5 @@ No source code, artwork, assets, or branding from those projects is copied into 
 ## Licence
 
 MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Budi Indra Ilham.
+
+Original portions: Copyright (c) 2026 Magic Tree contributors, under the same MIT licence — see [LICENSE-UPSTREAM](LICENSE-UPSTREAM).
