@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shouldRenderFrame } from '../frame';
+import { shouldRenderFrame, shouldUpdateCamera } from '../frame';
 
 const state = (over: Partial<Parameters<typeof shouldRenderFrame>[0]>) => ({
   morph: 0,
@@ -7,6 +7,20 @@ const state = (over: Partial<Parameters<typeof shouldRenderFrame>[0]>) => ({
   dirty: false,
   frame: 10,
   ...over,
+});
+
+describe('shouldUpdateCamera', () => {
+  it('skips a settled view when the framing is still valid', () => {
+    expect(shouldUpdateCamera({ morph: 1, lastMorph: 1, force: false })).toBe(false);
+  });
+
+  it('refits after a rebuild even though the view angle did not move', () => {
+    expect(shouldUpdateCamera({ morph: 1, lastMorph: -1, force: false })).toBe(true);
+  });
+
+  it('honours an explicit force', () => {
+    expect(shouldUpdateCamera({ morph: 1, lastMorph: 1, force: true })).toBe(true);
+  });
 });
 
 describe('shouldRenderFrame', () => {

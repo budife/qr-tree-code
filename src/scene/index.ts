@@ -6,7 +6,8 @@ import { buildMotes, type Motes } from './motes';
 import { buildWeather, type Weather, type WeatherType } from './weather';
 import { CELL, HEDGE_RING, ISO_AZIMUTH, ISO_ELEVATION, TOP_ELEVATION } from './constants';
 import { clamp01, lerp, easeInOutCubic } from './rng';
-import { shouldRenderFrame } from '../lib/frame';
+import { shouldRenderFrame, shouldUpdateCamera } from '../lib/frame';
+import { fitView } from '../lib/framing';
 import type { Palette } from './palette';
 import { SPECIES, type Species, type SpeciesId } from './species';
 
@@ -123,6 +124,9 @@ export class QrTreeScene {
     cam.updateProjectionMatrix();
 
     this.canopy.setMorph(this.morph, 0);
+    // A new link changes the QR version and therefore the scene's extent.
+    // Invalidate the cached framing even though the view angle did not move.
+    this.lastCameraMorph = -1;
     this.dirty = true;
   }
 
@@ -201,6 +205,7 @@ export class QrTreeScene {
     if (text === this.qr.text) return;
     this.teardown();
     this.build(text);
+    this.updateCamera(true);
   }
 
   setSpecies(species: SpeciesId | Species) {
@@ -210,6 +215,7 @@ export class QrTreeScene {
     const text = this.qr.text;
     this.teardown();
     this.build(text);
+    this.updateCamera(true);
   }
 
   /** The UI measures its own dock so the code is always framed clear of it. */
@@ -281,8 +287,7 @@ export class QrTreeScene {
    * plot into the area *above* the control dock so no UI ever covers a module.
    */
   private updateCamera(force = false) {
-    // The camera only moves with the morph or an explicit resize/dock change.
-    if (!force && this.morph === this.lastCameraMorph) return;
+    if (!shouldUpdateCamera({ morph: this.morph, lastMorph: this.lastCameraMorph, force })) return;
     this.lastCameraMorph = this.morph;
 
     // The camera runs on an eased copy of the morph so the swing eases in and
@@ -291,19 +296,11 @@ export class QrTreeScene {
     const w = this.canvas.clientWidth || 1;
     const h = this.canvas.clientHeight || 1;
     const aspect = w / h;
+    const viewport = { width: w, height: h, dockPx: this.dockPx };
 
-    const margin = 1.05;
-    const dockPx = Math.min(this.dockPx + 18, h * 0.5);
-    const usable = Math.max(h - dockPx, h * 0.4);
-
-    // Both framings use one fit: size the content to the strip *above* the dock,
-    // then shift the camera so that strip — not the whole viewport — is what
-    // ends up centred. Fitting to the full height and nudging afterwards is what
-    // left the scene low with a void above it on tall, narrow screens.
-    const fit = (halfW: number, halfV: number) => {
-      const half = Math.max(halfV * (h / usable), halfW / aspect) * margin;
-      return { half, shift: (half * dockPx) / h };
-    };
+    // Both framings use one fit, so a denser QR (larger rim) is simply framed
+    // from further away instead of growing on screen.
+    const fit = (halfW: number, halfV: number) => fitView(halfW, halfV, viewport);
 
     const isoFit = fit(this.isoHalfW, this.isoHalfV);
     const halfRim = this.rimUnits / 2;
