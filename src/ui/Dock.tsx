@@ -98,7 +98,6 @@ export function Dock({
             }
           }}
           onBlur={() => onDraftCommit(draft)}
-          placeholder="Masukkan link disini (contoh: https://instagram.com/username)"
           aria-label="Link to encode"
           inputMode="url"
           enterKeyHint="go"

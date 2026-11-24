@@ -342,12 +342,6 @@ button { font: inherit; color: inherit; }
   color: var(--ink);
   font-size: 14px;
   outline: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
-}
-.field__input::placeholder { color: rgba(92, 79, 63, 0.38); }
-.field__input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(181, 129, 63, 0.15);
 }
 
 .field__clear {
