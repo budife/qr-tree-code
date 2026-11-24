@@ -32,7 +32,7 @@ npm run dev
 
 ## How it works
 
-The plot is an `InstancedMesh` of one tile per QR module, not a texture. Dark modules sit slightly proud of the light field. The foundation underneath is heart-shaped, with the grass following its outline. Dark modules are clipped to a heart for the decorative look, so the big pattern itself is not standards-compliant; a small normal QR badge at the centre carries the real payload and is what scanners read. Payloads are encoded at error-correction level H with a four-module quiet zone.
+The plot is an `InstancedMesh` of one tile per QR module, not a texture. Dark modules sit slightly proud of the light field. The foundation underneath is heart-shaped, with the grass following its outline. Dark modules are turned 90° and clipped to an upright heart for the decorative look, so the big pattern itself is not standards-compliant; a small normal QR badge at the centre carries the real payload and is what scanners read. Payloads are encoded at error-correction level H with a four-module quiet zone.
 
 Every leaf knows two positions: where it rests on a branch and which module it belongs to once the code resolves. One `morph` value in `[0, 1]` drives leaf position, colour, camera angle and lighting through a 0.95 s transition. Leaves land in flat 3×2 runs at a uniform height — that uniformity is what keeps each module binarising cleanly for a scanner.
 

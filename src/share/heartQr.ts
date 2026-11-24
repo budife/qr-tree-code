@@ -1,5 +1,6 @@
 import { buildQr, QUIET_ZONE, type QrMatrix } from '../scene/qr';
 import { heartContains } from '../scene/heart';
+import { quarterTurn } from '../scene/quarterTurn';
 
 export interface HeartQrRaster {
   width: number;
@@ -62,7 +63,8 @@ export function heartQrWithBadge(
       const inQr = mx >= 0 && my >= 0 && mx < qr.size && my < qr.size;
       const nx = (mx - half) / half;
       const ny = -(my - half) / half;
-      const on = inQr && qr.dark[my * qr.size + mx] && heartContains(nx, ny);
+      const rot = inQr ? quarterTurn(qr.size, mx, my) : null;
+      const on = !!rot && qr.dark[rot.y * qr.size + rot.x] && heartContains(nx, ny);
       const c = on ? dark : light;
       const o = (py * width + px) * 4;
       data[o] = c[0];
