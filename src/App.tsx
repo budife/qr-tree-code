@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { QrTreeScene, type ViewMode } from './scene';
+import type { ViewMode } from './scene';
 import {
   SEASONS,
   BLOSSOM_SWATCHES,
@@ -32,7 +32,7 @@ function getRandomSpecies(): SpeciesId {
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<QrTreeScene | null>(null);
+  const sceneRef = useRef<import('./scene').QrTreeScene | null>(null);
   const ambienceRef = useRef<Ambience | null>(null);
 
   const [draft, setDraft] = useState('');
@@ -58,36 +58,50 @@ export default function App() {
     return { ...base, leaf: [...swatch.leaf], qrLeaf: [...swatch.qr], hedge: [...swatch.hedge] };
   }, [season, blossom]);
 
+  // The scene loads in a separate chunk; keep the latest config for when it arrives.
+  const sceneConfigRef = useRef({ palette, committed, mode, species, weather, fireOn });
+  useEffect(() => {
+    sceneConfigRef.current = { palette, committed, mode, species, weather, fireOn };
+  });
+
   // ---- scene lifecycle ---------------------------------------------------
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    let scene: QrTreeScene;
-    try {
-      scene = new QrTreeScene(canvasRef.current, committed, palette, SPECIES[species]);
-    } catch (error) {
-      // A browser without WebGL must not leave the whole page blank.
-      setSceneError(sceneErrorMessage(error));
-      return;
-    }
-    sceneRef.current = scene;
+    let cancelled = false;
+    let scene: import('./scene').QrTreeScene | null = null;
+    let ro: ResizeObserver | null = null;
+    const onResize = () => scene?.resize();
 
-    const onResize = () => scene.resize();
-    window.addEventListener('orientationchange', onResize);
-    // Observing the canvas catches every size change, including the ones that
-    // never fire a window resize -- a restored background tab, a container
-    // relayout, or the canvas coming back from a zero-sized state.
-    const ro = new ResizeObserver(onResize);
-    ro.observe(canvasRef.current);
+    void (async () => {
+      try {
+        const { QrTreeScene } = await import('./scene');
+        if (cancelled || !canvasRef.current) return;
+
+        const cfg = sceneConfigRef.current;
+        scene = new QrTreeScene(canvasRef.current, cfg.committed, cfg.palette, SPECIES[cfg.species]);
+        sceneRef.current = scene;
+        scene.setMode(cfg.mode);
+        scene.setWeather(cfg.fireOn ? 'fire' : 'clear');
+        scene.setRain(cfg.weather === 'rain');
+        const dock = dockRef.current;
+        if (dock) scene.setDockHeight(dock.getBoundingClientRect().height);
+
+        window.addEventListener('orientationchange', onResize);
+        ro = new ResizeObserver(onResize);
+        ro.observe(canvasRef.current);
+      } catch (error) {
+        if (!cancelled) setSceneError(sceneErrorMessage(error));
+      }
+    })();
 
     return () => {
+      cancelled = true;
       window.removeEventListener('orientationchange', onResize);
-      ro.disconnect();
-      scene.dispose();
+      ro?.disconnect();
+      scene?.dispose();
       sceneRef.current = null;
     };
-    // Built once; text and palette are pushed through imperatively below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -125,16 +139,12 @@ export default function App() {
 
   useEffect(() => {
     const link = normalizeLink(draft);
-    const t = window.setTimeout(() => setCommitted(link), REBUILD_DELAY);
+    const t = window.setTimeout(() => {
+      setCommitted(link);
+      if (link !== DEFAULT_URL) setMode('code');
+    }, REBUILD_DELAY);
     return () => window.clearTimeout(t);
   }, [draft]);
-
-  // Auto-switch to QR view when user enters a real link (not default)
-  useEffect(() => {
-    if (committed && committed !== DEFAULT_URL) {
-      setMode('code');
-    }
-  }, [committed]);
 
   useEffect(() => {
     ambienceRef.current = new Ambience();
