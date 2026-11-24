@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { heartPolygon, heartContains } from '../heart';
+import { heartPolygon } from '../heart';
 
 function inside(x: number, y: number, poly: Array<{ x: number; y: number }>) {
   let hit = false;
@@ -35,10 +35,3 @@ describe('heartPolygon', () => {
   });
 });
 
-describe('heartContains', () => {
-  it('keeps the heart upright: point down, notch up', () => {
-    expect(heartContains(0, -0.5)).toBe(true);
-    expect(heartContains(0, 0.5)).toBe(false);
-    expect(heartContains(0.8, 0.3)).toBe(true);
-  });
-});

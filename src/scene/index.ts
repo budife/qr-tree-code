@@ -3,7 +3,6 @@ import { buildQr, type QrMatrix } from './qr';
 import { buildPlot, HEART_EXTENT, type PlotMeshes } from './plot';
 import { buildCanopy, type Canopy } from './canopy';
 import { buildMotes, type Motes } from './motes';
-import { buildBadge, type Badge } from './badge';
 import { buildWeather, type Weather, type WeatherType } from './weather';
 import { CELL, ISO_AZIMUTH, ISO_ELEVATION, TOP_ELEVATION } from './constants';
 import { clamp01, lerp, easeInOutCubic } from './rng';
@@ -27,7 +26,6 @@ export class QrTreeScene {
   private plot!: PlotMeshes;
   private canopy!: Canopy;
   private motes!: Motes;
-  private badge!: Badge;
   private weather!: Weather;
   /** Survives rebuilds, so changing species or link keeps the chosen weather. */
   private weatherType: WeatherType = 'clear';
@@ -109,7 +107,6 @@ export class QrTreeScene {
     this.weather = buildWeather(this.qr);
     this.weather.setType(this.weatherType);
     this.world.add(this.plot.group, this.canopy.group, this.motes.points, this.weather.group);
-    this.rebuildBadge();
 
     // The heart foundation is wider than the QR plot; frame the whole shape.
     const rim = this.qr.plot * CELL * HEART_EXTENT;
@@ -186,23 +183,8 @@ export class QrTreeScene {
       .addScaledVector(up, (vMin + vMax) / 2);
   }
 
-  private rebuildBadge() {
-    const size = this.qr.plot * CELL * 0.34;
-    if (this.badge) {
-      this.world.remove(this.badge.mesh);
-      this.badge.dispose();
-    }
-    this.badge = buildBadge(this.qr.text, this.palette.qrLeaf[0], this.palette.moduleLight, size);
-    this.badge.setOpacity(this.morph);
-    this.world.add(this.badge.mesh);
-  }
-
   private teardown() {
     this.world.remove(this.plot.group, this.canopy.group, this.motes.points, this.weather.group);
-    if (this.badge) {
-      this.world.remove(this.badge.mesh);
-      this.badge.dispose();
-    }
     this.canopy.dispose();
     this.motes.dispose();
     this.weather.dispose();
@@ -250,7 +232,6 @@ export class QrTreeScene {
     // The loop stops repainting leaves once the code has settled, so a palette
     // change in code view must push the new colours through explicitly.
     this.canopy.setMorph(this.morph, this.elapsed);
-    this.rebuildBadge();
   }
 
   setMode(mode: ViewMode) {
@@ -407,7 +388,6 @@ export class QrTreeScene {
     if (idle || this.frame < 2) this.canopy.setMorph(this.morph, time);
     this.motes.update(dt, time, 1 - this.morph);
     this.weather.update(dt, time, 1 - this.morph);
-    this.badge.setOpacity(this.morph);
 
     if (shouldRenderFrame({
       morph: this.morph,
