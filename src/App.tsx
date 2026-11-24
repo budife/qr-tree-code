@@ -129,14 +129,19 @@ export default function App() {
     return () => ro.disconnect();
   }, []);
 
+  // Flush the typed link immediately on Enter, blur and Share. The debounce
+  // below stays as a background fallback for users who just keep typing.
+  const commitDraft = useCallback((value: string) => {
+    const link = normalizeLink(value);
+    setCommitted((prev) => (prev === link ? prev : link));
+    if (link !== DEFAULT_URL) setMode('code');
+  }, []);
+
   useEffect(() => {
     const link = normalizeLink(draft);
-    const t = window.setTimeout(() => {
-      setCommitted(link);
-      if (link !== DEFAULT_URL) setMode('code');
-    }, REBUILD_DELAY);
+    const t = window.setTimeout(() => commitDraft(link), REBUILD_DELAY);
     return () => window.clearTimeout(t);
-  }, [draft]);
+  }, [draft, commitDraft]);
 
   useEffect(() => {
     ambienceRef.current = new Ambience();
@@ -188,7 +193,9 @@ export default function App() {
   }, [fireOn, fireLocked]);
 
   const share = useCallback(async () => {
-    const url = committed;
+    // Share must use the text currently in the field, not the debounced value.
+    const url = normalizeLink(draft);
+    commitDraft(url);
     try {
       // Loaded on demand: the QR encoder is not needed until the visitor shares.
       const { buildShareImage } = await import('./share/qrImage');
@@ -222,7 +229,7 @@ export default function App() {
     } catch (err) {
       if ((err as Error)?.name !== 'AbortError') setToast('Could not share');
     }
-  }, [committed, palette]);
+  }, [draft, palette, commitDraft]);
 
   const onCanvasKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -265,6 +272,7 @@ export default function App() {
         dockRef={dockRef}
         draft={draft}
         onDraftChange={setDraft}
+        onDraftCommit={commitDraft}
         toast={toast}
         hint={hint}
         onToggleMode={toggleMode}

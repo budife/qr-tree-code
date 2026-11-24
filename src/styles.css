@@ -350,6 +350,23 @@ button { font: inherit; color: inherit; }
   box-shadow: 0 0 0 3px rgba(181, 129, 63, 0.15);
 }
 
+.field__clear {
+  flex: 0 0 30px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.18s ease, opacity 0.18s ease;
+}
+.field__clear:hover { color: var(--ink); }
+.field__clear:active { color: var(--accent); }
+.field__clear--empty { opacity: 0; pointer-events: none; }
+
 .field__action {
   width: 44px;
   height: 44px;
@@ -524,7 +541,7 @@ button { font: inherit; color: inherit; }
 @media (max-height: 640px) {
   .dock { gap: 6px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
   .hint { min-height: 28px; padding: 5px 12px; font-size: 11.5px; margin: 0; }
-  .field__input, .field__action { height: 38px; }
+  .field__input, .field__clear, .field__action { height: 38px; }
   .season, .tree { height: 32px; }
   .blossoms { height: 22px; }
   .blossom { width: 18px; height: 18px; }
@@ -533,7 +550,7 @@ button { font: inherit; color: inherit; }
 @media (max-height: 460px) {
   .dock { gap: 5px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); }
   .hint { min-height: 24px; padding: 3px 10px; font-size: 11px; }
-  .field__input, .field__action { height: 34px; }
+  .field__input, .field__clear, .field__action { height: 34px; }
   .season, .tree { height: 28px; font-size: 11px; }
   .blossoms { height: 20px; }
   .brand__text { display: none; }

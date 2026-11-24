@@ -1,4 +1,4 @@
-import type { ReactElement, RefObject } from 'react';
+import { useRef, type ReactElement, type RefObject } from 'react';
 import {
   BLOSSOM_SWATCHES,
   SEASONS,
@@ -41,6 +41,7 @@ interface DockProps {
   dockRef: RefObject<HTMLDivElement | null>;
   draft: string;
   onDraftChange: (value: string) => void;
+  onDraftCommit: (value: string) => void;
   toast: string | null;
   hint: string;
   onToggleMode: () => void;
@@ -59,6 +60,7 @@ export function Dock({
   dockRef,
   draft,
   onDraftChange,
+  onDraftCommit,
   toast,
   hint,
   onToggleMode,
@@ -72,6 +74,8 @@ export function Dock({
   muted,
   onToggleSound,
 }: DockProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className="dock" ref={dockRef}>
       <div className="dock__toast-anchor">
@@ -83,15 +87,38 @@ export function Dock({
 
       <div className="field">
         <input
+          ref={inputRef}
           className="field__input"
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              onDraftCommit(draft);
+            }
+          }}
+          onBlur={() => onDraftCommit(draft)}
           placeholder="Masukkan link disini (contoh: https://instagram.com/username)"
           aria-label="Link to encode"
+          inputMode="url"
+          enterKeyHint="go"
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
         />
+        <button
+          className={`field__clear${draft ? '' : ' field__clear--empty'}`}
+          type="button"
+          aria-label="Clear link"
+          aria-hidden={!draft}
+          tabIndex={draft ? 0 : -1}
+          onClick={() => {
+            onDraftChange('');
+            inputRef.current?.focus();
+          }}
+        >
+          ×
+        </button>
         <button
           className="field__action"
           type="button"
