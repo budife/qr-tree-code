@@ -149,18 +149,17 @@ export function Dock({
       </div>
 
       <div className="blossoms">
-        {season === 'spring' &&
-          BLOSSOM_SWATCHES.map((s) => (
-            <button
-              key={s.id}
-              className="blossom"
-              type="button"
-              aria-pressed={blossom === s.id}
-              aria-label={`${s.label} blossom`}
-              style={{ background: s.leaf[0] }}
-              onClick={() => onBlossomChange(s.id)}
-            />
-          ))}
+        {BLOSSOM_SWATCHES.map((s) => (
+          <button
+            key={s.id}
+            className="blossom"
+            type="button"
+            aria-pressed={blossom === s.id}
+            aria-label={`${s.label} blossom`}
+            style={{ background: s.leaf[0] }}
+            onClick={() => onBlossomChange(s.id)}
+          />
+        ))}
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ Live: https://budd.my.id/qr/
 ## Features
 
 - Five species — Oak, Pine, Willow, Birch and Palm — each with its own growth rules and silhouette.
-- Four seasons, plus six blossom palettes for spring. Every QR tone is chosen to stay scannable against the pale plot.
+- Four seasons, plus six blossom palettes that can be applied in any season. Every QR tone is chosen to stay scannable against the pale plot.
 - Rain and fire weather effects that only apply while the canopy is up.
 - Deterministic growth: the same link always grows the same tree.
 - Share button exports a flat, high-contrast QR PNG with the link printed underneath.

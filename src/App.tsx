@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ViewMode } from './scene';
 import {
-  SEASONS,
-  BLOSSOM_SWATCHES,
   type SeasonId,
   type BlossomId,
-  type Palette,
 } from './scene/palette';
 import { SPECIES, type SpeciesId } from './scene/species';
 import { Ambience } from './audio/ambience';
 import { DEFAULT_URL, normalizeLink } from './lib/url';
 import { sceneErrorMessage } from './lib/sceneStatus';
 import { currentSeason } from './lib/season';
+import { resolvePalette } from './lib/palette';
 import { InfoPanel } from './ui/InfoPanel';
 import { WeatherControls } from './ui/WeatherControls';
 import { Dock } from './ui/Dock';
@@ -50,12 +48,7 @@ export default function App() {
   const [modalMessage, setModalMessage] = useState('');
   const [sceneError, setSceneError] = useState<string | null>(null);
 
-  const palette = useMemo<Palette>(() => {
-    const base = SEASONS[season];
-    if (season !== 'spring') return base;
-    const swatch = BLOSSOM_SWATCHES.find((s) => s.id === blossom) ?? BLOSSOM_SWATCHES[0];
-    return { ...base, leaf: [...swatch.leaf], qrLeaf: [...swatch.qr], hedge: [...swatch.hedge] };
-  }, [season, blossom]);
+  const palette = useMemo(() => resolvePalette(season, blossom), [season, blossom]);
 
   // The scene loads in a separate chunk; keep the latest config for when it arrives.
   const sceneConfigRef = useRef({ palette, committed, mode, species, weather, fireOn });

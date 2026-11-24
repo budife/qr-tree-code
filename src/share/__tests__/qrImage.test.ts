@@ -9,13 +9,15 @@ const LINKS = [
   'https://a-much-longer-example-domain.co.uk/path/to/page?ref=qr-tree-code',
 ];
 
-// Every dark tone a module can take, against that season's pale plot.
+// Every dark tone a module can take, against every season's pale plot.
 const COMBOS = [
   ...SEASON_ORDER.flatMap((id) =>
     SEASONS[id].qrLeaf.map((dark) => ({ name: `${id} ${dark}`, dark, light: SEASONS[id].moduleLight })),
   ),
-  ...BLOSSOM_SWATCHES.flatMap((s) =>
-    s.qr.map((dark) => ({ name: `spring/${s.id} ${dark}`, dark, light: SEASONS.spring.moduleLight })),
+  ...SEASON_ORDER.flatMap((season) =>
+    BLOSSOM_SWATCHES.flatMap((s) =>
+      s.qr.map((dark) => ({ name: `${season}/${s.id} ${dark}`, dark, light: SEASONS[season].moduleLight })),
+    ),
   ),
 ];
 
