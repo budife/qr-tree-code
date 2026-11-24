@@ -1,4 +1,5 @@
 import { buildQr, QUIET_ZONE } from '../scene/qr';
+import { heartQrWithBadge } from './heartQr';
 import type { Palette } from '../scene/palette';
 
 export interface QrColors {
@@ -63,8 +64,8 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) 
 }
 
 /**
- * Builds the PNG that gets shared: a flat, reliably scannable QR in the
- * palette's colours with the encoded link printed underneath.
+ * Builds the PNG that gets shared: a heart made of QR modules with a normal
+ * scannable QR badge in its centre, in the palette's colours.
  */
 export function buildShareImage(text: string, palette: Palette): Promise<Blob> {
   const W = 1080;
@@ -81,15 +82,16 @@ export function buildShareImage(text: string, palette: Palette): Promise<Blob> {
   ctx.fillStyle = palette.ground;
   ctx.fillRect(0, 0, W, H);
 
-  // Draw at one pixel per module, then upscale by a whole number so every
-  // module stays the same size and edges stay sharp.
-  const raster = rasterQr(text, shareColors(palette));
+  // The heart raster includes its own clean QR badge, so no separate flat QR
+  // is drawn here. Upscale by a whole number to keep edges sharp.
+  const colors = shareColors(palette);
+  const raster = heartQrWithBadge(text, colors.dark, colors.light, 12, 0.4);
   const tile = document.createElement('canvas');
-  tile.width = raster.width;
-  tile.height = raster.width;
-  tile.getContext('2d')?.putImageData(new ImageData(raster.data, raster.width, raster.width), 0, 0);
+  tile.width = raster.stride;
+  tile.height = raster.stride;
+  tile.getContext('2d')?.putImageData(new ImageData(raster.data, raster.stride, raster.stride), 0, 0);
 
-  const size = Math.floor(BOX / raster.width) * raster.width;
+  const size = Math.floor(BOX / raster.stride) * raster.stride;
   const x = Math.round((W - size) / 2);
   const y = Math.round(PAD + (BOX - size) / 2);
   ctx.imageSmoothingEnabled = false;

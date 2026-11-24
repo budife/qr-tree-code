@@ -12,7 +12,7 @@ Live: https://budd.my.id/qr/
 - Four seasons, plus six blossom palettes that can be applied in any season. Every QR tone is chosen to stay scannable against the pale plot.
 - Rain and fire weather effects that only apply while the canopy is up.
 - Deterministic growth: the same link always grows the same tree.
-- Share button exports a flat, high-contrast QR PNG with the link printed underneath.
+- Share button exports a heart-shaped QR with a small standard QR badge at its centre for reliable scanning.
 - No external 3D assets: geometry, foliage and ambience are generated at runtime.
 - Subtle entrance and feedback animations, disabled automatically under `prefers-reduced-motion`.
 
@@ -32,7 +32,7 @@ npm run dev
 
 ## How it works
 
-The plot is an `InstancedMesh` of one tile per QR module, not a texture. Dark modules sit slightly proud of the light field. The foundation underneath is heart-shaped, with the grass following its outline, while the square module grid and its four-module quiet zone stay untouched so the code still scans. Payloads are encoded at error-correction level H with a four-module quiet zone so the pattern survives the canopy.
+The plot is an `InstancedMesh` of one tile per QR module, not a texture. Dark modules sit slightly proud of the light field. The foundation underneath is heart-shaped, with the grass following its outline. Dark modules are clipped to a heart for the decorative look, so the big pattern itself is not standards-compliant; a small normal QR badge at the centre carries the real payload and is what scanners read. Payloads are encoded at error-correction level H with a four-module quiet zone.
 
 Every leaf knows two positions: where it rests on a branch and which module it belongs to once the code resolves. One `morph` value in `[0, 1]` drives leaf position, colour, camera angle and lighting through a 0.95 s transition. Leaves land in flat 3×2 runs at a uniform height — that uniformity is what keeps each module binarising cleanly for a scanner.
 

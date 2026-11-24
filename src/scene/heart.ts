@@ -26,3 +26,18 @@ export function heartPolygon(segments = 180): HeartPoint[] {
 
   return points;
 }
+
+const NORMALISED = heartPolygon(180).map((p) => ({ x: p.x / 16, y: p.y / 16 }));
+
+/** Point-in-outline test on the normalised heart (roughly -1..1). */
+export function heartContains(x: number, y: number) {
+  let hit = false;
+  for (let i = 0, j = NORMALISED.length - 1; i < NORMALISED.length; j = i++) {
+    const a = NORMALISED[i];
+    const b = NORMALISED[j];
+    if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) {
+      hit = !hit;
+    }
+  }
+  return hit;
+}

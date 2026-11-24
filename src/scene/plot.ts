@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { moduleToWorld, QUIET_ZONE, type QrMatrix } from './qr';
 import { CELL } from './constants';
 import { makeRng } from './rng';
-import { heartPolygon } from './heart';
+import { heartPolygon, heartContains } from './heart';
 import type { Palette } from './palette';
 
 export interface PlotMeshes {
@@ -69,6 +69,7 @@ export function buildPlot(qr: QrMatrix, palette: Palette): PlotMeshes {
 
   const m = new THREE.Matrix4();
   const darkFlags: boolean[] = new Array(total);
+  const half = (qr.size - 1) / 2;
   let i = 0;
 
   for (let py = 0; py < qr.plot; py++) {
@@ -76,7 +77,10 @@ export function buildPlot(qr: QrMatrix, palette: Palette): PlotMeshes {
       const qx = px - QUIET_ZONE;
       const qy = py - QUIET_ZONE;
       const inside = qx >= 0 && qy >= 0 && qx < qr.size && qy < qr.size;
-      const dark = inside ? qr.dark[qy * qr.size + qx] : false;
+      const nx = (qx - half) / half;
+      const ny = -(qy - half) / half;
+      // Decorative clip: dark modules outside the heart are rendered light.
+      const dark = inside && qr.dark[qy * qr.size + qx] && heartContains(nx, ny);
       darkFlags[i] = dark;
 
       const { x, z } = moduleToWorld(px, py, qr.plot, CELL);
