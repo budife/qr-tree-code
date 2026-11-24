@@ -1,0 +1,463 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { QrTreeScene, type ViewMode } from './scene';
+import {
+  SEASONS,
+  SEASON_ORDER,
+  BLOSSOM_SWATCHES,
+  type SeasonId,
+  type BlossomId,
+  type Palette,
+} from './scene/palette';
+import { SPECIES, SPECIES_ORDER, type SpeciesId } from './scene/species';
+import { Ambience } from './audio/ambience';
+import { buildShareImage } from './share/qrImage';
+import {
+  SpringIcon,
+  SummerIcon,
+  AutumnIcon,
+  WinterIcon,
+  ShareIcon,
+  InfoIcon,
+  SoundOnIcon,
+  SoundOffIcon,
+  BrandMark,
+  OakIcon,
+  PineIcon,
+  WillowIcon,
+  BirchIcon,
+  PalmIcon,
+} from './ui/icons';
+import { DEFAULT_URL, normalizeLink } from './lib/url';
+import { sceneErrorMessage } from './lib/sceneStatus';
+import './styles.css';
+import './modal.css';
+
+const SEASON_ICONS: Record<SeasonId, () => React.ReactElement> = {
+  spring: SpringIcon,
+  summer: SummerIcon,
+  autumn: AutumnIcon,
+  winter: WinterIcon,
+};
+const SPECIES_ICONS: Record<SpeciesId, () => React.ReactElement> = {
+  oak: OakIcon,
+  pine: PineIcon,
+  willow: WillowIcon,
+  birch: BirchIcon,
+  palm: PalmIcon,
+};
+
+/** Debounce regrowing the tree so it does not thrash on every keystroke. */
+const REBUILD_DELAY = 500;
+
+/** Get season based on current month (Northern hemisphere). */
+function getCurrentSeason(): SeasonId {
+  const month = new Date().getMonth(); // 0-11
+  if (month >= 2 && month <= 4) return 'spring'; // Mar-May
+  if (month >= 5 && month <= 7) return 'summer'; // Jun-Aug
+  if (month >= 8 && month <= 10) return 'autumn'; // Sep-Nov
+  return 'winter'; // Dec-Feb
+}
+
+/** Get random tree species. */
+function getRandomSpecies(): SpeciesId {
+  const species = SPECIES_ORDER;
+  return species[Math.floor(Math.random() * species.length)];
+}
+
+export default function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<QrTreeScene | null>(null);
+  const ambienceRef = useRef<Ambience | null>(null);
+
+  const [draft, setDraft] = useState('');
+  const [committed, setCommitted] = useState(DEFAULT_URL); // start with default to avoid empty→default rebuild
+  const [season, setSeason] = useState<SeasonId>(getCurrentSeason());
+  const [species, setSpecies] = useState<SpeciesId>(getRandomSpecies());
+  const [weather, setWeather] = useState<'clear' | 'rain' | 'fire'>('clear');
+  const [fireActive, setFireActive] = useState(false); // fire button state independent of weather
+  const [fireDisabled, setFireDisabled] = useState(false); // fire cannot be turned off once on (except by rain)
+  const [blossom, setBlossom] = useState<BlossomId>('blush');
+  const [mode, setMode] = useState<ViewMode>('tree');
+  const [muted, setMuted] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [sceneError, setSceneError] = useState<string | null>(null);
+
+  const palette = useMemo<Palette>(() => {
+    const base = SEASONS[season];
+    if (season !== 'spring') return base;
+    const swatch = BLOSSOM_SWATCHES.find((s) => s.id === blossom) ?? BLOSSOM_SWATCHES[0];
+    return { ...base, leaf: [...swatch.leaf], qrLeaf: [...swatch.qr], hedge: [...swatch.hedge] };
+  }, [season, blossom]);
+
+  // ---- scene lifecycle ---------------------------------------------------
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    let scene: QrTreeScene;
+    try {
+      scene = new QrTreeScene(canvasRef.current, committed, palette, SPECIES[species]);
+    } catch (error) {
+      // A browser without WebGL must not leave the whole page blank.
+      setSceneError(sceneErrorMessage(error));
+      return;
+    }
+    sceneRef.current = scene;
+
+    const onResize = () => scene.resize();
+    window.addEventListener('orientationchange', onResize);
+    // Observing the canvas catches every size change, including the ones that
+    // never fire a window resize -- a restored background tab, a container
+    // relayout, or the canvas coming back from a zero-sized state.
+    const ro = new ResizeObserver(onResize);
+    ro.observe(canvasRef.current);
+
+    return () => {
+      window.removeEventListener('orientationchange', onResize);
+      ro.disconnect();
+      scene.dispose();
+      sceneRef.current = null;
+    };
+    // Built once; text and palette are pushed through imperatively below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    sceneRef.current?.setPalette(palette);
+  }, [palette]);
+
+  useEffect(() => {
+    sceneRef.current?.setText(committed);
+  }, [committed]);
+
+  useEffect(() => {
+    sceneRef.current?.setMode(mode);
+  }, [mode]);
+
+  useEffect(() => {
+    sceneRef.current?.setSpecies(species);
+  }, [species]);
+
+  useEffect(() => {
+    // Weather logic: fire and rain are independent (both can be ON simultaneously)
+    if (fireActive) {
+      sceneRef.current?.setWeather('fire');
+    } else {
+      sceneRef.current?.setWeather('clear');
+    }
+    sceneRef.current?.setRain(weather === 'rain');
+  }, [weather, fireActive]);
+
+  // Report the dock's real height so the code is never framed underneath it.
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!el) return;
+    const report = () => sceneRef.current?.setDockHeight(el.getBoundingClientRect().height);
+    report();
+    const ro = new ResizeObserver(report);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const link = normalizeLink(draft);
+    const t = window.setTimeout(() => setCommitted(link), REBUILD_DELAY);
+    return () => window.clearTimeout(t);
+  }, [draft]);
+
+  // Auto-switch to QR view when user enters a real link (not default)
+  useEffect(() => {
+    if (committed && committed !== DEFAULT_URL) {
+      setMode('code');
+    }
+  }, [committed]);
+
+  useEffect(() => {
+    ambienceRef.current = new Ambience();
+    return () => ambienceRef.current?.dispose();
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [toast]);
+
+  // ---- interactions ------------------------------------------------------
+
+  const toggleMode = useCallback(() => {
+    setMode((m) => {
+      const next: ViewMode = m === 'tree' ? 'code' : 'tree';
+      if (next === 'code') ambienceRef.current?.chord();
+      return next;
+    });
+  }, []);
+
+  const toggleSound = useCallback(() => {
+    const on = ambienceRef.current?.toggle() ?? false;
+    setMuted(!on);
+  }, []);
+
+  const share = useCallback(async () => {
+    const url = committed;
+    try {
+      // Capture QR as proper scannable PNG with link text
+      const blob = await buildShareImage(url, palette);
+      const file = new File([blob], 'qr-tree-code.png', { type: 'image/png' });
+      
+      // Try Web Share API with image
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: 'QR Tree Code',
+          text: `Scan this tree: ${url}`,
+          files: [file],
+        });
+        return;
+      }
+      
+      // Fallback: share URL only
+      if (navigator.share) {
+        await navigator.share({
+          title: 'QR Tree Code',
+          text: 'A tree that is also a scannable QR code.',
+          url,
+        });
+        return;
+      }
+      
+      // Final fallback: copy link to clipboard
+      await navigator.clipboard.writeText(url);
+      setToast('Link copied');
+    } catch (err) {
+      if ((err as Error)?.name !== 'AbortError') setToast('Could not share');
+    }
+  }, [committed, palette]);
+
+  const onCanvasKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleMode();
+    }
+  };
+
+  const hint = mode === 'tree' ? 'Tap the tree to see the QR code' : 'Tap to see the tree';
+
+  return (
+    <div className="stage" style={{ background: palette.ground }}>
+      <a className="brand" href="/" aria-label="QR Tree Code home">
+        <BrandMark />
+        <span className="brand__text">
+          <span className="brand__name">QR Tree Code</span>
+          <span className="brand__tag">3D QR</span>
+        </span>
+      </a>
+
+      <div className="info">
+        <button
+          className="info__btn"
+          type="button"
+          aria-expanded={showInfo}
+          aria-label="About this project"
+          onClick={() => setShowInfo((v) => !v)}
+        >
+          <InfoIcon />
+        </button>
+        {showInfo && (
+          <div className="info__card" role="dialog" aria-label="About QR Tree Code">
+            <p>
+              Based on{' '}
+              <a href="https://github.com/Slifronic/magic-tree" target="_blank" rel="noopener noreferrer">
+                Magic Tree
+              </a>
+              {' '}by Slifronic — MIT licensed. An isometric QR-tree built with React and three.js.
+            </p>
+            <p>
+              Earlier fork:{' '}
+              <a href="https://github.com/budife/magic-tree-qr" target="_blank" rel="noopener noreferrer">
+                magic-tree-qr
+              </a>
+              {' · '}
+              <a href="https://github.com/budife/qr-tree-code" target="_blank" rel="noopener noreferrer">
+                this repo
+              </a>
+            </p>
+          </div>
+        )}
+      </div>
+
+      <canvas
+        ref={canvasRef}
+        className="stage__canvas"
+        role="button"
+        tabIndex={0}
+        aria-label={hint}
+        onClick={toggleMode}
+        onKeyDown={onCanvasKey}
+      />
+      {sceneError && (
+        <div className="scene-error" role="alert">
+          {sceneError}
+        </div>
+      )}
+
+      {/* Weather only applies to the tree view, so the toggle fades out with it. */}
+      <div
+        className={`weather-controls${mode === 'code' ? ' weather-controls--hidden' : ''}`}
+        role="group"
+        aria-label="Cuaca"
+      >
+        <button
+          className="weather"
+          type="button"
+          title="Hujan"
+          aria-label="Hujan"
+          aria-pressed={weather === 'rain'}
+          onClick={() => setWeather((w) => (w === 'rain' ? 'clear' : 'rain'))}
+        >
+          <span aria-hidden="true">🌧</span>
+        </button>
+        <button
+          className="weather"
+          type="button"
+          aria-label="Kebakaran"
+          aria-pressed={fireActive}
+          aria-disabled={fireDisabled}
+          onClick={() => {
+            if (fireDisabled) {
+              setModalMessage(
+                'Government has left you. Congratulations, you got fucked up. Fire is now under their control. Wait for rain or accept your fate under tyranny.'
+              );
+              setModalOpen(true);
+              return;
+            }
+            if (!fireActive) {
+              // Turn fire ON: cannot be turned off manually
+              setFireActive(true);
+              setFireDisabled(true); // lock the button
+            } else {
+              // Try to turn OFF: show modal
+              setModalMessage(
+                'Government has left you. Congratulations, you got fucked up. You can\'t control fire anymore. They took everything, even your flames. Enjoy the burn.'
+              );
+              setModalOpen(true);
+            }
+          }}
+        >
+          <span aria-hidden="true">🔥</span>
+        </button>
+      </div>
+
+      <div className="dock" ref={dockRef}>
+        <div className="dock__toast-anchor">
+          {toast && <div className="toast">{toast}</div>}
+          <button className="hint" type="button" onClick={toggleMode}>
+            {hint}
+          </button>
+        </div>
+
+        <div className="field">
+          <input
+            className="field__input"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Masukkan link disini (contoh: https://instagram.com/username)"
+            aria-label="Link to encode"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+          />
+          <button
+            className="field__action"
+            type="button"
+            onClick={share}
+            aria-label="Share this tree"
+          >
+            <ShareIcon />
+          </button>
+        </div>
+
+        <div className="trees">
+          {SPECIES_ORDER.map((id) => {
+            const Icon = SPECIES_ICONS[id];
+            return (
+              <button
+                key={id}
+                className="tree"
+                type="button"
+                title={SPECIES[id].label}
+                aria-pressed={species === id}
+                onClick={() => setSpecies(id)}
+              >
+                <Icon />
+                <span className="tree__label">{SPECIES[id].label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="seasons">
+          {SEASON_ORDER.map((id) => {
+            const Icon = SEASON_ICONS[id];
+            return (
+              <button
+                key={id}
+                className="season"
+                type="button"
+                aria-pressed={season === id}
+                onClick={() => setSeason(id)}
+              >
+                <Icon />
+                <span className="season__label">{SEASONS[id].label}</span>
+              </button>
+            );
+          })}
+          <button
+            className="mute"
+            type="button"
+            aria-pressed={!muted}
+            aria-label={muted ? 'Turn ambience on' : 'Turn ambience off'}
+            onClick={toggleSound}
+          >
+            {muted ? <SoundOffIcon /> : <SoundOnIcon />}
+          </button>
+        </div>
+
+        <div className="blossoms">
+          {season === 'spring' &&
+            BLOSSOM_SWATCHES.map((s) => (
+              <button
+                key={s.id}
+                className="blossom"
+                type="button"
+                aria-pressed={blossom === s.id}
+                aria-label={`${s.label} blossom`}
+                style={{ background: s.leaf[0] }}
+                onClick={() => setBlossom(s.id)}
+              />
+            ))}
+        </div>
+      </div>
+
+      {modalOpen && (
+        <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-icon">⚠️</span>
+              <h3 className="modal-title">PERINGATAN DARURAT NASIONAL</h3>
+            </div>
+            <p className="modal-message">{modalMessage}</p>
+            <button
+              className="modal-btn"
+              onClick={() => setModalOpen(false)}
+            >
+              Makzulkan Pemerintah
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
