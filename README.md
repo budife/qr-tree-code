@@ -42,13 +42,8 @@ The QR matrix, leaf mapping and tree growth are covered by tests; scannability i
 ```text
 src/            app source (scene, ui, lib, audio, share)
 deployment/     deploy script and notes
-nginx/          container server config
-database/       README explaining why there is no database
-storage/        README explaining why there is no persistent storage
 docs/           screenshots
 .github/        CI workflow
-.env*           documented build-time environment files
-docker-compose*.yml, nginx.conf   local/prod container definitions
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).

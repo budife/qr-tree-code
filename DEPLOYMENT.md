@@ -8,8 +8,7 @@ Live: https://budd.my.id/qr/ (`/qr` redirects to `/qr/`).
   - `location = /qr` → 301 to `/qr/`
   - `location /qr/assets/` → proxy to `172.19.0.17:80`, gzip for JS/CSS/SVG, `Cache-Control: public, max-age=31536000, immutable`
   - `location /qr/` → proxy to `172.19.0.17:80`, gzip, `Cache-Control: no-cache` for the HTML
-- Container `qr` (`nginx:alpine`, network `proxy`) bind-mounts `/srv/projects/qr/dist` to `/usr/share/nginx/html`.
-- `nginx.conf` and `nginx/default.conf` in this repo describe the container config; the live container currently runs nginx's default config, which is compatible.
+- Container `qr` (`nginx:alpine`, network `proxy`) bind-mounts `/srv/projects/qr/dist` to `/usr/share/nginx/html`. It runs nginx's default static config; compression and caching are handled by NPM.
 - SSL and DNS are already configured. Do not issue a new certificate for this path.
 
 ## Build
