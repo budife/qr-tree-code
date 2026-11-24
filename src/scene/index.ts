@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { buildQr, type QrMatrix } from './qr';
-import { buildPlot, type PlotMeshes } from './plot';
+import { buildPlot, HEART_EXTENT, type PlotMeshes } from './plot';
 import { buildCanopy, type Canopy } from './canopy';
 import { buildMotes, type Motes } from './motes';
 import { buildWeather, type Weather, type WeatherType } from './weather';
-import { CELL, HEDGE_RING, ISO_AZIMUTH, ISO_ELEVATION, TOP_ELEVATION } from './constants';
+import { CELL, ISO_AZIMUTH, ISO_ELEVATION, TOP_ELEVATION } from './constants';
 import { clamp01, lerp, easeInOutCubic } from './rng';
 import { shouldRenderFrame } from '../lib/frame';
 import type { Palette } from './palette';
@@ -108,7 +108,8 @@ export class QrTreeScene {
     this.weather.setType(this.weatherType);
     this.world.add(this.plot.group, this.canopy.group, this.motes.points, this.weather.group);
 
-    const rim = (this.qr.plot + HEDGE_RING * 2) * CELL;
+    // The heart foundation is wider than the QR plot; frame the whole shape.
+    const rim = this.qr.plot * CELL * HEART_EXTENT;
     this.rimUnits = rim;
     this.measureIsoFraming(rim);
 

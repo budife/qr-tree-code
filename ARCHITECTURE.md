@@ -5,7 +5,7 @@ Static React app, no backend. React 19 + TypeScript + Vite 8; three.js for the s
 ## Layers
 
 - `src/lib/` — pure, tested helpers: link normalisation, season selection, scene error messages.
-- `src/scene/` — QR encoding (`qr.ts`), module → leaf mapping (`moduleLayout.ts`), instanced plot (`plot.ts`), tree growth (`tree.ts`, `species.ts`), canopy morph (`canopy.ts`), weather (`weather.ts`, `motes.ts`), palettes and seeded RNG.
+- `src/scene/` — QR encoding (`qr.ts`), module → leaf mapping (`moduleLayout.ts`), instanced plot with a heart-shaped foundation (`plot.ts`, `heart.ts`), tree growth (`tree.ts`, `species.ts`), canopy morph (`canopy.ts`), weather (`weather.ts`, `motes.ts`), palettes and seeded RNG.
 - `src/ui/` — presentational components (`Dock`, `InfoPanel`, `WeatherControls`, `AboutModal`). `App.tsx` owns state, effects and handlers only.
 - `src/audio/ambience.ts` — synthesised wind and chimes; no audio assets.
 - `src/share/qrImage.ts` — flat QR raster used by the share button.
