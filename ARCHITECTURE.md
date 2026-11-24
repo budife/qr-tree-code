@@ -18,7 +18,7 @@ Static React app, no backend. React 19 + TypeScript + Vite 8; three.js for the s
 4. A single `morph` value drives leaves from canopy positions to QR modules, along with camera and lighting.
 5. The share button rasterises the same matrix into a high-contrast PNG.
 
-`App.tsx` imports only the `ViewMode` type from `src/scene`; the scene itself is a dynamic import, so three.js ships in a separate chunk and the UI paints first. A ref carries the latest palette/link/mode/species/weather into the asynchronously created scene.
+`App.tsx` imports only the `ViewMode` type from `src/scene`; the scene itself is a dynamic import, so three.js ships in a separate chunk and the UI paints first. A ref carries the latest palette/link/mode/species/weather into the asynchronously created scene. Once the code view settles, `shouldRenderFrame` in `src/lib/frame.ts` lets the loop skip camera and render work until something changes. The share PNG encoder is loaded on demand.
 
 ## Runtime
 

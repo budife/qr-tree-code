@@ -9,7 +9,6 @@ import {
 } from './scene/palette';
 import { SPECIES, type SpeciesId } from './scene/species';
 import { Ambience } from './audio/ambience';
-import { buildShareImage } from './share/qrImage';
 import { DEFAULT_URL, normalizeLink } from './lib/url';
 import { sceneErrorMessage } from './lib/sceneStatus';
 import { currentSeason } from './lib/season';
@@ -198,6 +197,8 @@ export default function App() {
   const share = useCallback(async () => {
     const url = committed;
     try {
+      // Loaded on demand: the QR encoder is not needed until the visitor shares.
+      const { buildShareImage } = await import('./share/qrImage');
       // Capture QR as proper scannable PNG with link text
       const blob = await buildShareImage(url, palette);
       const file = new File([blob], 'qr-tree-code.png', { type: 'image/png' });

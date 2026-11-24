@@ -6,6 +6,7 @@ import { buildMotes, type Motes } from './motes';
 import { buildWeather, type Weather, type WeatherType } from './weather';
 import { CELL, HEDGE_RING, ISO_AZIMUTH, ISO_ELEVATION, TOP_ELEVATION } from './constants';
 import { clamp01, lerp, easeInOutCubic } from './rng';
+import { shouldRenderFrame } from '../lib/frame';
 import type { Palette } from './palette';
 import { SPECIES, type Species, type SpeciesId } from './species';
 
@@ -44,6 +45,8 @@ export class QrTreeScene {
   private raf = 0;
   private frame = 0;
   private disposed = false;
+  private dirty = true;
+  private lastCameraMorph = -1;
 
   private isoHalfW = 20;
   private isoHalfV = 20;
@@ -120,6 +123,7 @@ export class QrTreeScene {
     cam.updateProjectionMatrix();
 
     this.canopy.setMorph(this.morph, 0);
+    this.dirty = true;
   }
 
   /**
@@ -213,11 +217,13 @@ export class QrTreeScene {
     const next = Math.max(0, px);
     if (Math.abs(next - this.dockPx) < 1) return;
     this.dockPx = next;
+    this.dirty = true;
     this.updateCamera(true);
   }
 
   setPalette(palette: Palette) {
     this.palette = palette;
+    this.dirty = true;
     (this.scene.background as THREE.Color).set(palette.ground);
     this.plot.applyPalette(palette);
     this.canopy.applyPalette(palette);
@@ -229,19 +235,23 @@ export class QrTreeScene {
 
   setMode(mode: ViewMode) {
     this.morphTarget = mode === 'code' ? 1 : 0;
+    this.dirty = true;
   }
 
   setWeather(type: WeatherType) {
     this.weatherType = type;
     this.weather.setType(type);
+    this.dirty = true;
   }
 
   setRain(active: boolean) {
     this.weather.setRain(active);
+    this.dirty = true;
   }
 
   toggleMode() {
     this.morphTarget = this.morphTarget > 0.5 ? 0 : 1;
+    this.dirty = true;
     return this.morphTarget > 0.5 ? 'code' : 'tree';
   }
 
@@ -253,6 +263,7 @@ export class QrTreeScene {
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
+    this.dirty = true;
     this.updateCamera(true);
   }
 
@@ -270,6 +281,10 @@ export class QrTreeScene {
    * plot into the area *above* the control dock so no UI ever covers a module.
    */
   private updateCamera(force = false) {
+    // The camera only moves with the morph or an explicit resize/dock change.
+    if (!force && this.morph === this.lastCameraMorph) return;
+    this.lastCameraMorph = this.morph;
+
     // The camera runs on an eased copy of the morph so the swing eases in and
     // out instead of starting and stopping dead.
     const t = easeInOutCubic(this.morph);
@@ -373,8 +388,16 @@ export class QrTreeScene {
     this.motes.update(dt, time, 1 - this.morph);
     this.weather.update(dt, time, 1 - this.morph);
 
-    this.updateCamera();
-    this.renderer.render(this.scene, this.camera);
+    if (shouldRenderFrame({
+      morph: this.morph,
+      morphTarget: this.morphTarget,
+      dirty: this.dirty,
+      frame: this.frame,
+    })) {
+      this.updateCamera();
+      this.renderer.render(this.scene, this.camera);
+      this.dirty = false;
+    }
     this.frame++;
   };
 }
