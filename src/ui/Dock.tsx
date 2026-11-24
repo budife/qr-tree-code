@@ -98,6 +98,7 @@ export function Dock({
             }
           }}
           onBlur={() => onDraftCommit(draft)}
+          placeholder="Tempel link di sini"
           aria-label="Link to encode"
           inputMode="url"
           enterKeyHint="go"

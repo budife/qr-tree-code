@@ -343,6 +343,7 @@ button { font: inherit; color: inherit; }
   font-size: 14px;
   outline: none;
 }
+.field__input::placeholder { color: var(--ink-faint); }
 
 .field__clear {
   flex: 0 0 30px;
