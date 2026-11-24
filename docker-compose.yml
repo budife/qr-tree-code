@@ -1,0 +1,12 @@
+# Local preview of the production build: npm run build && docker compose up -d
+services:
+  web:
+    image: nginx:alpine
+    container_name: qr-tree-code-local
+    ports:
+      - "8089:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped

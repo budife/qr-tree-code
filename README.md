@@ -4,6 +4,8 @@ An isometric 3D tree whose plot is a scannable QR code. Type a link, grow a tree
 
 ![The tree and its revealed code](docs/tree.png)
 
+Live: https://budd.my.id/qr/
+
 ## Features
 
 - Five species — Oak, Pine, Willow, Birch and Palm — each with its own growth rules and silhouette.
@@ -34,6 +36,22 @@ The plot is an `InstancedMesh` of one tile per QR module, not a texture. Dark mo
 Every leaf knows two positions: where it rests on a branch and which module it belongs to once the code resolves. One `morph` value in `[0, 1]` drives leaf position, colour, camera angle and lighting through a 0.95 s transition. Leaves land in flat 3×2 runs at a uniform height — that uniformity is what keeps each module binarising cleanly for a scanner.
 
 The QR matrix, leaf mapping and tree growth are covered by tests; scannability itself was verified in the browser with [jsQR](https://github.com/cozmo/jsQR).
+
+## Repository layout
+
+```text
+src/            app source (scene, ui, lib, audio, share)
+deployment/     deploy script and notes
+nginx/          container server config
+database/       README explaining why there is no database
+storage/        README explaining why there is no persistent storage
+docs/           screenshots
+.github/        CI workflow
+.env*           documented build-time environment files
+docker-compose*.yml, nginx.conf   local/prod container definitions
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Based on
 
