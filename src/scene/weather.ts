@@ -8,7 +8,6 @@ const RAIN_COUNT = 200;
 const FIRE_COUNT = 500; // core fire particles
 const SMOKE_COUNT = 150; // smoke particles
 const EMBER_COUNT = 80; // flying embers/sparks
-const FIRE_KILL_TIME = 10; // seconds to extinguish fire when rain active
 const RAIN_EXTINGUISH_TIME = 20 / 1.5; // ~13.3s: rain puts out whole fire 50% faster than 20s
 const FIRE_RECOVER_TIME = 10; // seconds for wet zone to dry after rain stops
 const WET_EDGE = 1 / 3; // soft edge width of wet zone (normalized radius)
@@ -19,7 +18,6 @@ export interface Weather {
   update: (dt: number, time: number, visibility: number) => void;
   setType: (type: WeatherType) => void;
   setRain: (active: boolean) => void;
-  setKillTimer: () => void;
   dispose: () => void;
 }
 
@@ -34,7 +32,6 @@ export function buildWeather(qr: QrMatrix): Weather {
   let rainIntensity = 0.0; // 0-1, fades in when rain active, fades out when rain off
   let wetProgress = 0.0; // 0-1 over RAIN_EXTINGUISH_TIME, decays over FIRE_RECOVER_TIME when rain stops
   let fireSpreadTimer = 0.0; // 0-FIRE_SPREAD_TIME, fire spreads across canvas
-  let fireKillTimer = 0; // timer for fast extinguish when fire disabled
   let rainActive = false; // independent flag: rain can be ON while fire is ON
 
   // ---- Rain particles --------------------------------------------------------
@@ -57,7 +54,7 @@ export function buildWeather(qr: QrMatrix): Weather {
   }
 
   // ---- Fire particles (multi-layer: core + outer flames) ---------------------
-  const fireCoreGeo = new THREE.SphereGeometry(0.4, 8, 8); // inner hot core (was 0.8)
+  const fireCoreGeo = new THREE.SphereGeometry(0.4, 8, 8); // inner hot core
   const fireCoreMat = new THREE.MeshBasicMaterial({ 
     color: 0xffaa00, 
     transparent: true,
@@ -66,7 +63,7 @@ export function buildWeather(qr: QrMatrix): Weather {
   fireCoreMesh.visible = false;
   group.add(fireCoreMesh);
 
-  const fireOuterGeo = new THREE.SphereGeometry(0.9, 10, 10); // outer cooler flames (was 1.8)
+  const fireOuterGeo = new THREE.SphereGeometry(0.9, 10, 10); // outer cooler flames
   const fireOuterMat = new THREE.MeshBasicMaterial({ 
     color: 0xff6622, 
     transparent: true,
@@ -76,7 +73,7 @@ export function buildWeather(qr: QrMatrix): Weather {
   group.add(fireOuterMesh);
 
   // ---- Smoke particles -------------------------------------------------------
-  const smokeGeo = new THREE.SphereGeometry(1.25, 8, 8); // large, soft (was 2.5)
+  const smokeGeo = new THREE.SphereGeometry(1.25, 8, 8); // large and soft
   const smokeMat = new THREE.MeshBasicMaterial({
     color: 0x222222,
     transparent: true,
@@ -86,7 +83,7 @@ export function buildWeather(qr: QrMatrix): Weather {
   group.add(smokeMesh);
 
   // ---- Embers (flying sparks) ------------------------------------------------
-  const emberGeo = new THREE.SphereGeometry(0.08, 6, 6); // (was 0.15)
+  const emberGeo = new THREE.SphereGeometry(0.08, 6, 6);
   const emberMat = new THREE.MeshBasicMaterial({
     color: 0xff4400,
     transparent: true,
@@ -170,12 +167,6 @@ export function buildWeather(qr: QrMatrix): Weather {
     const rainWetRadius = wetProgress * (spreadRadius + WET_EDGE);
     // 1 = dry (full fire), 0 = soaked (out); linear ramp across WET_EDGE behind the wet front
     const wetAt = (d: number) => (d >= rainWetRadius ? 1 : Math.max(0, 1 - (rainWetRadius - d) / WET_EDGE));
-    
-    // Fast kill timer (when fire disabled, 10s to extinguish)
-    if (fireKillTimer > 0) {
-      fireKillTimer -= dt;
-      fireIntensity = Math.max(0, fireKillTimer / FIRE_KILL_TIME); // linear fade from 1 to 0
-    }
     
     rainMesh.visible = weatherVisible && rainIntensity > 0.02;
     fireCoreMesh.visible = weatherVisible && fireIntensity > 0.02;
@@ -373,10 +364,6 @@ export function buildWeather(qr: QrMatrix): Weather {
     rainActive = active;
   };
 
-  const setKillTimer = () => {
-    fireKillTimer = FIRE_KILL_TIME;
-  };
-
   const dispose = () => {
     rainGeo.dispose();
     rainMat.dispose();
@@ -390,5 +377,5 @@ export function buildWeather(qr: QrMatrix): Weather {
     emberMat.dispose();
   };
 
-  return { group, update, setType, setRain, setKillTimer, dispose };
+  return { group, update, setType, setRain, dispose };
 }

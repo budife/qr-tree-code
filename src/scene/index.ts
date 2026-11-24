@@ -52,8 +52,6 @@ export class QrTreeScene {
   /** Height of the control dock in CSS px, reported by the UI. */
   private dockPx = 200;
 
-  onMorphChange?: (t: number) => void;
-
   private canvas: HTMLCanvasElement;
 
   constructor(
@@ -242,10 +240,6 @@ export class QrTreeScene {
     this.weather.setRain(active);
   }
 
-  killFire() {
-    this.weather.setKillTimer();
-  }
-
   toggleMode() {
     this.morphTarget = this.morphTarget > 0.5 ? 0 : 1;
     return this.morphTarget > 0.5 ? 'code' : 'tree';
@@ -253,12 +247,6 @@ export class QrTreeScene {
 
   get mode(): ViewMode {
     return this.morphTarget > 0.5 ? 'code' : 'tree';
-  }
-
-  /** PNG of the current framing, for download/share. */
-  snapshot(): string {
-    this.renderer.render(this.scene, this.camera);
-    return this.canvas.toDataURL('image/png');
   }
 
   resize() {
@@ -377,7 +365,6 @@ export class QrTreeScene {
         dir > 0 ? Math.min(this.morph + step, this.morphTarget)
                 : Math.max(this.morph - step, this.morphTarget),
       );
-      this.onMorphChange?.(this.morph);
     }
 
     // Idle sway only matters while the canopy is up; skip work once settled.

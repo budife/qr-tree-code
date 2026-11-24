@@ -115,11 +115,9 @@ function growConifer(seed: number, opts: GrowOptions): TreeModel {
 
   const height = opts.height;
   const trunkR = opts.height * sp.trunkRadius;
-  // Palm oil: tight 3-whorl crown at top (92-100%), pine has full 11 whorls spread
-  const isPalm = sp.id === 'palm';
-  const whorls = isPalm ? 3 : 11;
-  const canopyBase = isPalm ? height * 0.92 : height * 0.16;
-  const baseSpan = isPalm ? height * 0.42 : height * 0.34;
+  const whorls = 11;
+  const canopyBase = height * 0.16;
+  const baseSpan = height * 0.34;
 
   // Trunk, in segments so it can taper.
   const segs = whorls + 1;
@@ -130,7 +128,7 @@ function growConifer(seed: number, opts: GrowOptions): TreeModel {
     branches.push({
       start: new THREE.Vector3(Math.sin(i * 0.7) * lean * 0.06, y0, 0),
       end: new THREE.Vector3(Math.sin((i + 1) * 0.7) * lean * 0.06, y1, 0),
-      radius: trunkR * (1 - (i / segs) * (isPalm ? 0.3 : 0.75)),
+      radius: trunkR * (1 - (i / segs) * 0.75),
       depth: i === 0 ? 0 : 1,
     });
   }
@@ -214,7 +212,7 @@ function growPalm(seed: number, opts: GrowOptions): TreeModel {
     
     // Rachis: starts erect (young) or arching outward (mature)
     const archAngle = age < 0.3 ? lerp(0.1, 0.3, age / 0.3) : lerp(0.3, 1.1, (age - 0.3) / 0.7);
-    const rachisLen = lerp(20, 28, rng()); // very long fronds 20-28m (was 10-14)
+    const rachisLen = lerp(20, 28, rng()); // very long fronds, 20-28m
     
     const endX = Math.cos(azimuth) * Math.sin(archAngle) * rachisLen;
     const endY = y + Math.cos(archAngle) * rachisLen;
@@ -245,7 +243,7 @@ function growPalm(seed: number, opts: GrowOptions): TreeModel {
       
       // Pinnae alternate sides + slight droop (longer leaflets like coconut)
       const side = (p % 2) * 2 - 1; // -1 or 1
-      const pinnaeLen = lerp(1.2, 2.0, rng()); // longer pinnae (was 0.6-1.0)
+      const pinnaeLen = lerp(1.2, 2.0, rng()); // long pinnae, like a coconut palm
       const droop = 0.25 + t * 0.35; // more droop toward tip
       
       leaves.push(new THREE.Vector3(
@@ -253,7 +251,7 @@ function growPalm(seed: number, opts: GrowOptions): TreeModel {
         pos.y - droop,
         pos.z + right.z * side * pinnaeLen,
       ));
-      leafScales.push(lerp(0.5, 0.75, rng())); // bigger leaflets (was 0.35-0.55)
+      leafScales.push(lerp(0.5, 0.75, rng())); // broad leaflets
     }
   }
   

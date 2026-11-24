@@ -109,7 +109,7 @@ export function buildCanopy(qr: QrMatrix, palette: Palette, species: Species): C
   const delay = new Float32Array(leafCount);
   const spin = new Float32Array(leafCount * 3);
 
-  // Each dark module receives LEAVES_PER_MODULE leaves in a 2 x 2 x N stack.
+  // Each dark module receives LEAVES_PER_MODULE leaves in a flat 3 x 2 layer.
   for (let i = 0; i < leafCount; i++) {
     const src = model.leaves[i];
     treePos[i * 3] = src.x;
@@ -136,6 +136,7 @@ export function buildCanopy(qr: QrMatrix, palette: Palette, species: Species): C
 
   const treeColors = new Float32Array(leafCount * 3);
   const qrColors = new Float32Array(leafCount * 3);
+  let paintedFor = -1;
 
   const applyPalette = (p: Palette) => {
     const rngC = makeRng(seed ^ 0x1234abcd);
@@ -170,7 +171,6 @@ export function buildCanopy(qr: QrMatrix, palette: Palette, species: Species): C
   const quat = new THREE.Quaternion();
   const euler = new THREE.Euler();
   const color = new THREE.Color();
-  let paintedFor = -1;
 
   // Cached branch transforms, so retracting them each frame is just a rescale.
   const bMid = new Float32Array(model.branches.length * 3);

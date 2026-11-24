@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildQr, moduleToWorld, QUIET_ZONE, type QrMatrix } from './qr';
+import { moduleToWorld, QUIET_ZONE, type QrMatrix } from './qr';
 import { CELL, HEDGE_RING } from './constants';
 import { makeRng } from './rng';
 import type { Palette } from './palette';
@@ -132,4 +132,3 @@ function paintHedge(mesh: THREE.InstancedMesh, palette: Palette) {
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 }
 
-export { buildQr };
