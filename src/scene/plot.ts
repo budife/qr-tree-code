@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { moduleToWorld, QUIET_ZONE, type QrMatrix } from './qr';
-import { CELL } from './constants';
+import { CELL, HEDGE_RING } from './constants';
 import { makeRng } from './rng';
-import { heartPolygon } from './heart';
 import type { Palette } from './palette';
 
 export interface PlotMeshes {
@@ -13,47 +12,20 @@ export interface PlotMeshes {
   applyPalette: (p: Palette) => void;
 }
 
-const HEART_DEPTH = 0.9;
-/** Heart half-width as a multiple of the QR plot width. */
-const HEART_SCALE = 1.2;
-/** Full heart width as a multiple of the QR plot width. */
-export const HEART_EXTENT = HEART_SCALE * 2;
-/** Raw heart units: pushes the concave notch outside the square grid. */
-const HEART_OFFSET = -2;
-const HEDGE_BLADES = 1800;
-
-/** Heart outline in the XY plane; the scene rotates it flat onto XZ. */
-function heartShapePoints(plotUnits: number, segments = 180) {
-  return heartPolygon(segments).map((p) => ({
-    x: (plotUnits * HEART_SCALE * p.x) / 16,
-    y: (plotUnits * HEART_SCALE * (p.y - HEART_OFFSET)) / 16,
-  }));
-}
-
 /**
- * The foundation is a heart, while the QR modules stay a square grid in its
- * centre. The grid and its quiet zone are untouched, so scanners still work.
+ * The ground plot *is* the code: every module is a tile, dark ones sit slightly
+ * proud so the pattern reads even before the canopy settles into it.
  */
 export function buildPlot(qr: QrMatrix, palette: Palette): PlotMeshes {
   const group = new THREE.Group();
   const plotUnits = qr.plot * CELL;
+  const rimUnits = plotUnits + HEDGE_RING * 2 * CELL;
 
-  // ---- heart-shaped base slab ------------------------------------------
-  const outline = heartShapePoints(plotUnits);
-  const shape = new THREE.Shape();
-  shape.moveTo(outline[0].x, outline[0].y);
-  for (let i = 1; i < outline.length; i++) shape.lineTo(outline[i].x, outline[i].y);
-  shape.closePath();
-
-  const slabGeo = new THREE.ExtrudeGeometry(shape, {
-    depth: HEART_DEPTH,
-    bevelEnabled: false,
-    curveSegments: 1,
-  });
-  slabGeo.rotateX(-Math.PI / 2);
-  slabGeo.translate(0, -HEART_DEPTH, 0);
+  // ---- base slab -------------------------------------------------------
+  const slabGeo = new THREE.BoxGeometry(rimUnits, 0.9, rimUnits);
   const slabMat = new THREE.MeshLambertMaterial({ color: palette.slab });
   const slab = new THREE.Mesh(slabGeo, slabMat);
+  slab.position.y = -0.45;
   slab.receiveShadow = true;
   group.add(slab);
 
@@ -89,8 +61,8 @@ export function buildPlot(qr: QrMatrix, palette: Palette): PlotMeshes {
   tiles.instanceMatrix.needsUpdate = true;
   group.add(tiles);
 
-  // ---- hedge rim follows the heart, outside the quiet zone -------------
-  const hedge = buildHedge(plotUnits, palette);
+  // ---- hedge rim -------------------------------------------------------
+  const hedge = buildHedge(plotUnits, rimUnits, palette);
   group.add(hedge);
 
   const applyPalette = (p: Palette) => {
@@ -107,7 +79,13 @@ export function buildPlot(qr: QrMatrix, palette: Palette): PlotMeshes {
   return { group, tiles, hedge, slab, applyPalette };
 }
 
-function buildHedge(plotUnits: number, palette: Palette) {
+const HEDGE_BLADES = 1800;
+
+/**
+ * Grass is confined to the rim *outside* the quiet zone — the four modules of
+ * clear margin a scanner needs stay genuinely clear.
+ */
+function buildHedge(plotUnits: number, rimUnits: number, palette: Palette) {
   const rng = makeRng(0x5eed1eaf);
   const geo = new THREE.BoxGeometry(0.16, 1, 0.16);
   geo.translate(0, 0.5, 0);
@@ -116,8 +94,8 @@ function buildHedge(plotUnits: number, palette: Palette) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
 
-  // Shape y becomes world -z after the slab rotation; use the same contour.
-  const contour = heartShapePoints(plotUnits, 360).map((p) => ({ x: p.x, z: -p.y }));
+  const inner = plotUnits / 2;
+  const outer = rimUnits / 2;
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const e = new THREE.Euler();
@@ -125,9 +103,14 @@ function buildHedge(plotUnits: number, palette: Palette) {
   const scl = new THREE.Vector3();
 
   for (let k = 0; k < HEDGE_BLADES; k++) {
-    const idx = Math.floor((k / HEDGE_BLADES) * contour.length + rng() * 2) % contour.length;
-    const edge = contour[idx];
-    pos.set(edge.x + (rng() - 0.5) * 0.7, -0.28, edge.z + (rng() - 0.5) * 0.7);
+    const side = k % 4;
+    const along = rng() * rimUnits - outer;
+    const depth = inner + rng() * (outer - inner);
+
+    if (side === 0) pos.set(along, -0.28, -depth);
+    else if (side === 1) pos.set(along, -0.28, depth);
+    else if (side === 2) pos.set(-depth, -0.28, along);
+    else pos.set(depth, -0.28, along);
 
     e.set((rng() - 0.5) * 0.5, rng() * Math.PI, (rng() - 0.5) * 0.5);
     q.setFromEuler(e);
@@ -148,3 +131,4 @@ function paintHedge(mesh: THREE.InstancedMesh, palette: Palette) {
   }
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 }
+
