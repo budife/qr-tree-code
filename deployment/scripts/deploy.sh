@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
-# Sync a fresh build into the live qr container's bind mount.
+# Rebuild in place. Container qr mounts this repo's dist directly, so no copy is needed.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SRC="$ROOT/dist"
-DEST="/srv/projects/qr/dist"
+DIST="$ROOT/dist"
 BACKUP_ROOT="/srv/backups"
 
-if [[ ! -f "$SRC/index.html" ]]; then
-  echo "dist belum ada. Jalankan: npm run build" >&2
-  exit 1
-fi
-if [[ ! -d "$DEST/assets" ]]; then
-  echo "$DEST tidak ditemukan — container qr tidak terpasang?" >&2
+if [[ ! -d "$DIST/assets" ]]; then
+  echo "$DIST belum ada. Jalankan: npm run build" >&2
   exit 1
 fi
 if ! docker ps --format '{{.Names}}' | grep -qx qr; then
@@ -22,13 +17,10 @@ fi
 
 TS="$(date +%Y%m%d-%H%M%S)"
 BACKUP="$BACKUP_ROOT/qr-dist-$TS"
-cp -a "$DEST" "$BACKUP"
+cp -a "$DIST" "$BACKUP"
 echo "Backup: $BACKUP"
 
-# Keep the directory itself so the container's bind-mount inode stays valid.
-find "$DEST/assets" -mindepth 1 -type f -delete
-cp -a "$SRC/." "$DEST/"
-chmod -R a+rX "$DEST"
+npm --prefix "$ROOT" run build
 
 TITLE="$(docker exec qr cat /usr/share/nginx/html/index.html | grep -o '<title>[^<]*' | head -1)"
 echo "Container sekarang menyajikan: $TITLE"

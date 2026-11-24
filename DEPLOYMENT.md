@@ -8,7 +8,7 @@ Live: https://budd.my.id/qr/ (`/qr` redirects to `/qr/`).
   - `location = /qr` → 301 to `/qr/`
   - `location /qr/assets/` → proxy to `172.19.0.17:80`, gzip for JS/CSS/SVG, `Cache-Control: public, max-age=31536000, immutable`
   - `location /qr/` → proxy to `172.19.0.17:80`, gzip, `Cache-Control: no-cache` for the HTML
-- Container `qr` (`nginx:alpine`, network `proxy`) bind-mounts `/srv/projects/qr/dist` to `/usr/share/nginx/html`. It runs nginx's default static config; compression and caching are handled by NPM.
+- Container `qr` (`nginx:alpine`, network `proxy`, static IP `172.19.0.17`) bind-mounts this repo's `dist/` (`/srv/projects/qr-tree-code/dist`) to `/usr/share/nginx/html`. It runs nginx's default static config; compression and caching are handled by NPM.
 - SSL and DNS are already configured. Do not issue a new certificate for this path.
 
 ## Build
@@ -28,7 +28,7 @@ The build writes `dist/`. Asset filenames are content-hashed; `index.html` is in
 bash deployment/scripts/deploy.sh
 ```
 
-The script backs up the served `dist`, replaces only the files inside it (same directory inode, so the bind mount stays valid), and verifies the container sees the new `index.html`. An NPM reload is **not** needed for asset changes. If `4.conf` changes, validate and reload explicitly:
+The script backs up the current `dist`, rebuilds it in place, and verifies the container sees the new `index.html`. NPM reload is **not** needed for asset changes. If `4.conf` changes, validate and reload explicitly:
 
 ```bash
 docker exec npm nginx -t && docker exec npm nginx -s reload
@@ -36,7 +36,7 @@ docker exec npm nginx -t && docker exec npm nginx -s reload
 
 ## Rollback
 
-Copy the newest `/srv/backups/qr-dist-<timestamp>` back over `/srv/projects/qr/dist`, then verify:
+Copy the newest `/srv/backups/qr-dist-<timestamp>` back over `/srv/projects/qr-tree-code/dist`, then verify:
 
 ```bash
 curl -s https://budd.my.id/qr/ | grep -i '<title>'

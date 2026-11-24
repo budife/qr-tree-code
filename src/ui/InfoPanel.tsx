@@ -36,10 +36,7 @@ export function InfoPanel({ open, onToggle }: InfoPanelProps) {
               {' '}by Slifronic — MIT licensed. An isometric QR-tree built with React and three.js.
             </p>
             <p>
-              Earlier fork:{' '}
-              <a href="https://github.com/budife/magic-tree-qr" target="_blank" rel="noopener noreferrer">
-                magic-tree-qr
-              </a>
+              Earlier fork: magic-tree-qr (deleted)
               {' · '}
               <a href="https://github.com/budife/qr-tree-code" target="_blank" rel="noopener noreferrer">
                 this repo

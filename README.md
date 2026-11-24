@@ -52,7 +52,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
 
 This project is based on the code of:
 
-- [budife/magic-tree-qr](https://github.com/budife/magic-tree-qr) — the earlier fork whose code was reused, rewritten and extended here.
+- The earlier fork `budife/magic-tree-qr` (now deleted) whose code was reused, rewritten and extended here.
 - [Magic Tree](https://github.com/Slifronic/magic-tree) by [@Slifronic](https://github.com/Slifronic) — MIT licensed, the upstream of that fork.
 - [tree.icqr.com](https://tree.icqr.com) — the original interactive concept that inspired the idea.
 
