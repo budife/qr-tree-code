@@ -76,7 +76,7 @@ export function Dock({
     <div className="dock" ref={dockRef}>
       <div className="dock__toast-anchor">
         {toast && <div className="toast">{toast}</div>}
-        <button className="hint" type="button" onClick={onToggleMode}>
+        <button key={hint} className="hint" type="button" onClick={onToggleMode}>
           {hint}
         </button>
       </div>

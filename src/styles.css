@@ -41,6 +41,7 @@ button { font: inherit; color: inherit; }
   min-height: 100vh;
   overflow: hidden;
   background: var(--bg);
+  transition: background-color 0.6s ease;
 }
 
 .stage__canvas {
@@ -67,6 +68,60 @@ button { font: inherit; color: inherit; }
   text-align: center;
   line-height: 1.5;
   box-shadow: var(--shadow-soft);
+}
+
+/* ----------------------------------------------------------------- motion */
+
+@keyframes ui-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes ui-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes hint-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes weather-glow {
+  from { opacity: 0.35; }
+  to   { opacity: 0.7; }
+}
+
+.brand,
+.info,
+.dock > * {
+  animation: ui-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.info { animation-delay: 0.06s; }
+.weather-controls { animation: ui-fade 0.5s ease 0.12s backwards; }
+
+.dock > *:nth-child(2) { animation-delay: 0.06s; }
+.dock > *:nth-child(3) { animation-delay: 0.12s; }
+.dock > *:nth-child(4) { animation-delay: 0.18s; }
+.dock > *:nth-child(5) { animation-delay: 0.24s; }
+
+.info__card { animation: card-in 0.22s ease backwards; }
+.toast { animation: toast-in 0.22s ease backwards; }
+.hint { animation: hint-in 0.3s ease backwards; }
+
+.weather[aria-pressed='true']::after {
+  animation: weather-glow 2.2s ease-in-out infinite alternate;
 }
 
 /* ---------------------------------------------------------------- weather */
@@ -336,9 +391,10 @@ button { font: inherit; color: inherit; }
   font-weight: 500;
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.12s ease;
 }
 .season:hover { border-color: var(--line-strong); }
+.season:active { transform: scale(0.97); }
 .season[aria-pressed='true'] {
   background: rgba(214, 197, 168, 0.42);
   border-color: transparent;
@@ -387,9 +443,10 @@ button { font: inherit; color: inherit; }
   font-weight: 500;
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.12s ease;
 }
 .tree:hover { border-color: var(--line-strong); }
+.tree:active { transform: scale(0.97); }
 .tree[aria-pressed='true'] {
   background: rgba(214, 197, 168, 0.42);
   border-color: transparent;
@@ -483,5 +540,11 @@ button { font: inherit; color: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hint, .season, .tree, .blossom, .field__action { transition: none; }
+  .stage,
+  .hint, .season, .tree, .blossom, .field__action,
+  .brand, .info, .weather-controls, .dock > *,
+  .info__card, .toast, .weather[aria-pressed='true']::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

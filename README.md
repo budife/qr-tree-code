@@ -14,6 +14,7 @@ Live: https://budd.my.id/qr/
 - Deterministic growth: the same link always grows the same tree.
 - Share button exports a flat, high-contrast QR PNG with the link printed underneath.
 - No external 3D assets: geometry, foliage and ambience are generated at runtime.
+- Subtle entrance and feedback animations, disabled automatically under `prefers-reduced-motion`.
 
 ## Quick start
 
