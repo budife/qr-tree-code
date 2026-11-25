@@ -31,6 +31,7 @@ export class QrTreeScene {
   /** Survives rebuilds, so changing species or link keeps the chosen weather. */
   private weatherType: WeatherType = 'clear';
   private qr!: QrMatrix;
+  private prevPlotSize = 0;
   private world = new THREE.Group();
   private target = new THREE.Vector3();
   private offset = new THREE.Vector3();
@@ -89,6 +90,7 @@ export class QrTreeScene {
 
     this.scene.add(this.world);
     this.build(text);
+    this.prevPlotSize = this.qr.plot;
     this.resize();
     this.lastTime = performance.now();
     this.loop();
@@ -102,12 +104,32 @@ export class QrTreeScene {
 
   private build(text: string) {
     this.qr = buildQr(text);
-    this.plot = buildPlot(this.qr, this.palette);
+    
+    // Build plot only on first run or if QR size changed
+    if (!this.plot || this.qr.plot !== this.prevPlotSize) {
+      if (this.plot) {
+        // Dispose old plot if size changed
+        this.world.remove(this.plot.group);
+        this.plot.group.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          mesh.geometry?.dispose();
+          const mat = mesh.material as THREE.Material | undefined;
+          mat?.dispose();
+        });
+      }
+      this.plot = buildPlot(this.qr, this.palette);
+      this.world.add(this.plot.group);
+      this.prevPlotSize = this.qr.plot;
+    } else {
+      // Same plot size — just update module colours for new text
+      this.plot.applyPalette(this.palette);
+    }
+
     this.canopy = buildCanopy(this.qr, this.palette, this.species);
     this.motes = buildMotes(this.qr, this.palette);
     this.weather = buildWeather(this.qr);
     this.weather.setType(this.weatherType);
-    this.world.add(this.plot.group, this.canopy.group, this.motes.points, this.weather.group);
+    this.world.add(this.canopy.group, this.motes.points, this.weather.group);
 
     const rim = (this.qr.plot + HEDGE_RING * 2) * CELL;
     this.rimUnits = rim;
@@ -187,16 +209,11 @@ export class QrTreeScene {
   }
 
   private teardown() {
-    this.world.remove(this.plot.group, this.canopy.group, this.motes.points, this.weather.group);
+    this.world.remove(this.canopy.group, this.motes.points, this.weather.group);
     this.canopy.dispose();
     this.motes.dispose();
     this.weather.dispose();
-    this.plot.group.traverse((o) => {
-      const mesh = o as THREE.Mesh;
-      mesh.geometry?.dispose();
-      const mat = mesh.material as THREE.Material | undefined;
-      mat?.dispose();
-    });
+    // Plot is intentionally kept — it is the static QR base plane.
   }
 
   // ----------------------------------------------------------------- api
