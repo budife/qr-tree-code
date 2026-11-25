@@ -1,19 +1,10 @@
 import {
-  BLOSSOM_SWATCHES,
   SEASONS,
   type Palette,
   type SeasonId,
 } from '../scene/palette';
 
-/** Season defines the setting; the first blossom swatch defines the foliage tones. */
+/** Season defines the palette — each season has its own complete colour set. */
 export function resolvePalette(season: SeasonId): Palette {
-  const base = SEASONS[season];
-  const swatch = BLOSSOM_SWATCHES[0];
-
-  return {
-    ...base,
-    leaf: [...swatch.leaf],
-    qrLeaf: [...swatch.qr],
-    hedge: [...swatch.hedge],
-  };
+  return SEASONS[season];
 }
