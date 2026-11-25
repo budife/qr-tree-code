@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildQr, moduleToWorld, QUIET_ZONE } from '../qr';
-import { leafTarget, leafCountFor } from '../moduleLayout';
-import { LEAVES_PER_MODULE } from '../constants';
+import { leafTarget, leafCountFor, BLEED_LIMIT } from '../moduleLayout';
+import { LEAVES_PER_MODULE, CELL } from '../constants';
 import { growTree } from '../tree';
 import { SPECIES, SPECIES_ORDER } from '../species';
 import { hashString, makeRng } from '../rng';
@@ -63,13 +63,14 @@ describe('leaf targets', () => {
   it('gives every dark module exactly LEAVES_PER_MODULE leaves', () => {
     for (const text of SAMPLES) {
       const qr = buildQr(text);
+      const halfPlotWorld = (qr.plot * CELL) / 2;
       const perCell = new Map<string, number>();
 
       for (let i = 0; i < leafCountFor(qr); i++) {
         const t = leafTarget(qr, i);
         // Recover the module this leaf landed on from its world position.
-        const mx = Math.floor((t.x + qr.plot / 2) / 1);
-        const mz = Math.floor((t.z + qr.plot / 2) / 1);
+        const mx = Math.floor((t.x + halfPlotWorld) / CELL);
+        const mz = Math.floor((t.z + halfPlotWorld) / CELL);
         const key = `${mx},${mz}`;
         perCell.set(key, (perCell.get(key) ?? 0) + 1);
       }
@@ -82,10 +83,11 @@ describe('leaf targets', () => {
   it('only ever lands leaves on dark modules, never the quiet zone', () => {
     for (const text of SAMPLES) {
       const qr = buildQr(text);
+      const halfPlotWorld = (qr.plot * CELL) / 2;
       for (let i = 0; i < leafCountFor(qr); i++) {
         const t = leafTarget(qr, i);
-        const mx = Math.floor(t.x + qr.plot / 2);
-        const mz = Math.floor(t.z + qr.plot / 2);
+        const mx = Math.floor((t.x + halfPlotWorld) / CELL);
+        const mz = Math.floor((t.z + halfPlotWorld) / CELL);
 
         expect(mx).toBeGreaterThanOrEqual(QUIET_ZONE);
         expect(mz).toBeGreaterThanOrEqual(QUIET_ZONE);
@@ -101,12 +103,13 @@ describe('leaf targets', () => {
 
   it('keeps a module block inside its own cell (no bleed past ~5%)', () => {
     const qr = buildQr('https://example.com');
+    const halfPlotWorld = (qr.plot * CELL) / 2;
     for (let i = 0; i < leafCountFor(qr); i++) {
       const t = leafTarget(qr, i);
-      const cx = Math.floor(t.x + qr.plot / 2) - qr.plot / 2 + 0.5;
-      const cz = Math.floor(t.z + qr.plot / 2) - qr.plot / 2 + 0.5;
-      expect(Math.abs(t.x - cx) + t.sx / 2).toBeLessThanOrEqual(0.55);
-      expect(Math.abs(t.z - cz) + t.sz / 2).toBeLessThanOrEqual(0.55);
+      const cx = Math.floor((t.x + halfPlotWorld) / CELL) * CELL - halfPlotWorld + CELL / 2;
+      const cz = Math.floor((t.z + halfPlotWorld) / CELL) * CELL - halfPlotWorld + CELL / 2;
+      expect(Math.abs(t.x - cx) + t.sx / 2).toBeLessThanOrEqual(BLEED_LIMIT);
+      expect(Math.abs(t.z - cz) + t.sz / 2).toBeLessThanOrEqual(BLEED_LIMIT);
     }
   });
 

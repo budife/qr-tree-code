@@ -10,6 +10,13 @@ export interface LeafTarget {
   sz: number;
 }
 
+/** Relative leaf grid scale (designed for CELL=1, scales with CELL). */
+const LEAF_GRID_SCALE = 1 / 3;  // 3 cols -> step of 1/3
+const LEAF_GRID_SCALE_Z = 1 / 2; // 2 rows -> step of 1/2
+const LEAF_SX = 0.38;            // leaf width relative to CELL
+const LEAF_SZ = 0.56;            // leaf depth relative to CELL
+const BLEED_TOLERANCE = 0.55;    // max bleed as fraction of CELL
+
 /**
  * Where leaf `index` lands once the canopy has settled into the code.
  *
@@ -26,15 +33,18 @@ export function leafTarget(qr: QrMatrix, index: number): LeafTarget {
   const { x, z } = moduleToWorld(cell.x + QUIET_ZONE, cell.y + QUIET_ZONE, qr.plot, CELL);
 
   return {
-    x: x + gx / 3,
+    x: x + gx * CELL * LEAF_GRID_SCALE,
     y: MODULE_HEIGHT / 2,
-    z: z + gz / 2,
+    z: z + gz * CELL * LEAF_GRID_SCALE_Z,
     // Slightly oversized so neighbours knit together without a visible gap.
-    sx: 0.38,
+    sx: LEAF_SX * CELL,
     sy: MODULE_HEIGHT,
-    sz: 0.56,
+    sz: LEAF_SZ * CELL,
   };
 }
+
+/** Bleed tolerance for tests — scales with CELL. */
+export const BLEED_LIMIT = BLEED_TOLERANCE * CELL;
 
 /** Total leaves needed to fill every dark module of `qr`. */
 export const leafCountFor = (qr: QrMatrix) => qr.darkCells.length * LEAVES_PER_MODULE;
