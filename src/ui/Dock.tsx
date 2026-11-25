@@ -1,9 +1,7 @@
 import { useRef, type ReactElement, type RefObject } from 'react';
 import {
-  BLOSSOM_SWATCHES,
   SEASONS,
   SEASON_ORDER,
-  type BlossomId,
   type SeasonId,
 } from '../scene/palette';
 import { SPECIES, SPECIES_ORDER, type SpeciesId } from '../scene/species';
@@ -50,8 +48,6 @@ interface DockProps {
   onSpeciesChange: (id: SpeciesId) => void;
   season: SeasonId;
   onSeasonChange: (id: SeasonId) => void;
-  blossom: BlossomId;
-  onBlossomChange: (id: BlossomId) => void;
   muted: boolean;
   onToggleSound: () => void;
 }
@@ -69,8 +65,6 @@ export function Dock({
   onSpeciesChange,
   season,
   onSeasonChange,
-  blossom,
-  onBlossomChange,
   muted,
   onToggleSound,
 }: DockProps) {
@@ -173,20 +167,6 @@ export function Dock({
         >
           {muted ? <SoundOffIcon /> : <SoundOnIcon />}
         </button>
-      </div>
-
-      <div className="blossoms">
-        {BLOSSOM_SWATCHES.map((s) => (
-          <button
-            key={s.id}
-            className="blossom"
-            type="button"
-            aria-pressed={blossom === s.id}
-            aria-label={`${s.label} blossom`}
-            style={{ background: s.leaf[0] }}
-            onClick={() => onBlossomChange(s.id)}
-          />
-        ))}
       </div>
     </div>
   );

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ViewMode } from './scene';
 import {
   type SeasonId,
-  type BlossomId,
 } from './scene/palette';
 import { SPECIES, type SpeciesId } from './scene/species';
 import { Ambience } from './audio/ambience';
@@ -39,7 +38,6 @@ export default function App() {
   const [weather, setWeather] = useState<'clear' | 'rain'>('clear');
   const [fireOn, setFireOn] = useState(false); // fire button state independent of weather
   const [fireLocked, setFireLocked] = useState(false); // fire cannot be turned off once on (except by rain)
-  const [blossom, setBlossom] = useState<BlossomId>('blush');
   const [mode, setMode] = useState<ViewMode>('tree');
   const [muted, setMuted] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
@@ -48,7 +46,7 @@ export default function App() {
   const [modalMessage, setModalMessage] = useState('');
   const [sceneError, setSceneError] = useState<string | null>(null);
 
-  const palette = useMemo(() => resolvePalette(season, blossom), [season, blossom]);
+  const palette = useMemo(() => resolvePalette(season), [season]);
 
   // The scene loads in a separate chunk; keep the latest config for when it arrives.
   const sceneConfigRef = useRef({ palette, committed, mode, species, weather, fireOn });
@@ -186,7 +184,7 @@ export default function App() {
       setFireLocked(true);
     } else {
       setModalMessage(
-        'Government has left you. Congratulations, you got fucked up. You can\'t control fire anymore. They took everything, even your flames. Enjoy the burn.'
+        "Government has left you. Congratulations, you got fucked up. You can't control fire anymore. They took everything, even your flames. Enjoy the burn."
       );
       setModalOpen(true);
     }
@@ -281,8 +279,6 @@ export default function App() {
         onSpeciesChange={setSpecies}
         season={season}
         onSeasonChange={setSeason}
-        blossom={blossom}
-        onBlossomChange={setBlossom}
         muted={muted}
         onToggleSound={toggleSound}
       />
