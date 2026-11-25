@@ -161,8 +161,8 @@ export class QrTreeScene {
    * assumed target instead leaves an asymmetric canopy visibly off-centre.
    */
   private measureIsoFraming(rim: number) {
-    const { canopyTop, canopyRadius } = this.canopy.model;
-
+    // Frame the *plot only* (QR base plane) so its screen size/position
+    // stays identical across species. The tree simply sits in the centre.
     const dir = new THREE.Vector3(
       Math.cos(ISO_ELEVATION) * Math.sin(ISO_AZIMUTH),
       Math.sin(ISO_ELEVATION),
@@ -179,12 +179,6 @@ export class QrTreeScene {
       new THREE.Vector3(-half, 0, half),
       new THREE.Vector3(half, 0, half),
     ];
-    for (const sx of [-1, 1]) {
-      for (const sz of [-1, 1]) {
-        points.push(new THREE.Vector3(sx * canopyRadius, 0, sz * canopyRadius));
-        points.push(new THREE.Vector3(sx * canopyRadius, canopyTop, sz * canopyRadius));
-      }
-    }
 
     let wMin = Infinity;
     let wMax = -Infinity;
@@ -201,7 +195,7 @@ export class QrTreeScene {
 
     this.isoHalfW = (wMax - wMin) / 2;
     this.isoHalfV = (vMax - vMin) / 2;
-    // A world point that projects to the middle of the content.
+    // A world point that projects to the middle of the plot.
     this.isoCenter
       .set(0, 0, 0)
       .addScaledVector(right, (wMin + wMax) / 2)
