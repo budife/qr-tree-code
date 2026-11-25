@@ -1,5 +1,5 @@
 /** One QR module = one world unit. */
-export const CELL = 0.65;
+export const CELL = 0.45;
 /** Leaves packed into each dark module when the code is revealed (a 3x2 layer). */
 export const LEAVES_PER_MODULE = 6;
 /** Height of a settled module block. Uniform, so every top face lights equally. */
