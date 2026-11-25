@@ -19,7 +19,7 @@ export interface Framing {
  * of filling more of the screen.
  */
 export function fitView(halfW: number, halfV: number, viewport: Viewport): Framing {
-  const { width, height, dockPx, margin = 1.05 } = viewport;
+  const { width, height, dockPx, margin = 2.6 } = viewport;
   const dock = Math.min(dockPx + 18, height * 0.5);
   const usable = Math.max(height - dock, height * 0.4);
   const aspect = Math.max(width, 1) / Math.max(height, 1);
